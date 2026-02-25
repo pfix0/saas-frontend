@@ -1,0 +1,197 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ══════════════════════════════════════════
+   ساس — Global Styles & Brand Tokens
+   ══════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons+Outlined');
+
+:root {
+  /* Brand */
+  --brand: #660033;
+  --brand-light: #8a1a52;
+  --brand-dark: #4d0026;
+  --grey: #666666;
+  --grey-light: #999999;
+  
+  /* Surfaces */
+  --bg: #ffffff;
+  --bg-subtle: #faf8f9;
+  --bg-muted: #f5f3f4;
+  --border: #e8e5e6;
+  --border-light: #f0edef;
+  
+  /* Text */
+  --text: #1a1a1a;
+  --text-secondary: #444444;
+  --text-muted: #999999;
+  
+  /* Status */
+  --success: #1a8a5c;
+  --warning: #d4850a;
+  --danger: #c0392b;
+  --info: #2874a6;
+  
+  /* Spacing */
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-lg: 16px;
+}
+
+/* ═══ Base ═══ */
+
+html {
+  direction: rtl;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'IBM Plex Sans Arabic', 'Tajawal', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text-secondary);
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Tajawal', sans-serif;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+/* ═══ Scrollbar ═══ */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--grey-light);
+}
+
+/* ═══ Material Icons RTL ═══ */
+
+.material-icons-outlined {
+  font-family: 'Material Icons Outlined';
+  font-size: 20px;
+  direction: ltr;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ═══ Focus States ═══ */
+
+*:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ═══ Utility Classes ═══ */
+
+@layer components {
+  /* Brand gradient */
+  .bg-brand-gradient {
+    background: linear-gradient(135deg, var(--brand-dark), var(--brand), var(--brand-light));
+  }
+
+  /* Card */
+  .card {
+    @apply bg-white rounded-saas border border-grey-200 shadow-saas;
+  }
+
+  /* Badge */
+  .badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  }
+  .badge-success { @apply bg-green-50 text-success; }
+  .badge-warning { @apply bg-amber-50 text-warning; }
+  .badge-danger  { @apply bg-red-50 text-danger; }
+  .badge-info    { @apply bg-blue-50 text-info; }
+  .badge-brand   { background: rgba(102, 0, 51, 0.08); color: var(--brand); }
+
+  /* Button base */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-saas font-semibold text-sm transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-brand {
+    @apply btn bg-brand-800 text-white hover:bg-brand-700 active:bg-brand-900;
+    box-shadow: 0 2px 8px rgba(102, 0, 51, 0.2);
+  }
+  .btn-brand:hover {
+    box-shadow: 0 4px 12px rgba(102, 0, 51, 0.3);
+  }
+  .btn-outline {
+    @apply btn border-2 border-brand-800 text-brand-800 bg-transparent hover:bg-brand-50;
+  }
+  .btn-ghost {
+    @apply btn text-grey-500 hover:bg-grey-100;
+  }
+  .btn-danger {
+    @apply btn bg-danger text-white hover:opacity-90;
+  }
+
+  /* Input */
+  .input {
+    @apply w-full px-4 py-2.5 rounded-saas border border-grey-200 bg-white text-grey-800 text-sm transition-colors;
+    @apply focus:border-brand-800 focus:ring-2 focus:ring-brand-800/10 focus:outline-none;
+    @apply placeholder:text-grey-400;
+  }
+  .input-error {
+    @apply border-danger focus:border-danger focus:ring-danger/10;
+  }
+
+  /* Table */
+  .table-saas {
+    @apply w-full border-collapse text-sm;
+  }
+  .table-saas th {
+    @apply text-right px-4 py-3 font-semibold text-grey-700 bg-grey-50 border-b border-grey-200;
+  }
+  .table-saas td {
+    @apply px-4 py-3 border-b border-grey-100;
+  }
+  .table-saas tr:hover td {
+    @apply bg-grey-50/50;
+  }
+}
+
+/* ═══ Animations ═══ */
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(-20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease;
+}
+
+.animate-slide-in {
+  animation: slideInRight 0.3s ease;
+}
