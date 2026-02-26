@@ -87,6 +87,7 @@ export default function StorefrontLayout({
           <nav className="hidden md:flex items-center gap-6">
             <Link href={base} className="text-sm text-grey-600 hover:text-grey-900 transition-colors">الرئيسية</Link>
             <Link href={`${base}/products`} className="text-sm text-grey-600 hover:text-grey-900 transition-colors">المنتجات</Link>
+            <Link href={`${base}/account`} className="text-sm text-grey-600 hover:text-grey-900 transition-colors">حسابي</Link>
           </nav>
 
           {/* Actions */}
@@ -95,6 +96,10 @@ export default function StorefrontLayout({
             <button onClick={() => setSearchOpen(!searchOpen)} className="p-2 rounded-xl hover:bg-grey-50 transition-colors">
               <span className="material-icons-outlined text-grey-500 text-xl">search</span>
             </button>
+            {/* Account */}
+            <Link href={`${base}/account`} className="p-2 rounded-xl hover:bg-grey-50 transition-colors">
+              <span className="material-icons-outlined text-grey-500 text-xl">person_outline</span>
+            </Link>
             {/* Cart */}
             <button onClick={() => setCartOpen(true)} className="p-2 rounded-xl hover:bg-grey-50 transition-colors relative">
               <span className="material-icons-outlined text-grey-500 text-xl">shopping_bag</span>
