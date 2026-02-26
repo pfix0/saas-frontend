@@ -37,10 +37,10 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             id={inputId}
             className={cn(
               'input',
-              icon && 'has-icon-right',
               error && 'input-error',
               className
             )}
+            style={icon ? { paddingRight: '2.75rem' } : undefined}
             {...props}
           />
         </div>

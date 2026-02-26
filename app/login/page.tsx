@@ -118,14 +118,15 @@ function LoginForm() {
             </button>
           </div>
           <div className="relative">
-            <span className="material-icons-outlined absolute right-3 top-1/2 -translate-y-1/2 text-grey-300 text-lg">
+            <span className="material-icons-outlined absolute right-3 top-1/2 -translate-y-1/2 text-grey-300 text-lg pointer-events-none">
               lock_outline
             </span>
             <input
               type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={e => { setPassword(e.target.value); clearField('password'); }}
-              className={`input has-icons ${errors.password ? 'input-error' : ''}`}
+              className={`input ${errors.password ? 'input-error' : ''}`}
+              style={{ paddingRight: '2.75rem', paddingLeft: '2.75rem' }}
               placeholder="••••••••"
               dir="ltr"
               autoComplete="current-password"
