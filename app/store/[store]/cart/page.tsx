@@ -126,10 +126,11 @@ export default function CartPage({ params }: { params: { store: string } }) {
               </div>
             </div>
 
-            <button className="w-full py-3.5 rounded-xl bg-brand-800 text-white text-sm font-bold hover:bg-brand-700 transition-all flex items-center justify-center gap-2">
+            <Link href={`${base}/checkout`}
+              className="w-full py-3.5 rounded-xl bg-brand-800 text-white text-sm font-bold hover:bg-brand-700 transition-all flex items-center justify-center gap-2">
               <span className="material-icons-outlined text-lg">lock</span>
               إتمام الطلب
-            </button>
+            </Link>
 
             <p className="text-center text-[0.6rem] text-grey-400 mt-3 flex items-center justify-center gap-1">
               <span className="material-icons-outlined text-[10px]">verified_user</span>
