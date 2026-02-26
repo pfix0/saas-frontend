@@ -10,16 +10,22 @@ import { useAdminStore } from '@/stores/admin';
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const { login, isLoading, error, clearError } = useAdminStore();
+  const { login, error, clearError } = useAdminStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     clearError();
+    setSubmitting(true);
     const ok = await login(email, password);
-    if (ok) router.push('/admin');
+    if (ok) {
+      router.push('/admin');
+    } else {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -49,47 +55,27 @@ export default function AdminLoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-semibold text-grey-300 mb-1.5">البريد الإلكتروني</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@saas.qa"
-                dir="ltr"
-                required
-                className="w-full px-4 py-2.5 rounded-xl bg-grey-700 border border-grey-600 text-white text-sm placeholder:text-grey-500 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition-all"
-              />
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+                placeholder="admin@saas.qa" dir="ltr" required
+                className="w-full px-4 py-2.5 rounded-xl bg-grey-700 border border-grey-600 text-white text-sm placeholder:text-grey-500 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition-all" />
             </div>
 
             <div>
               <label className="block text-sm font-semibold text-grey-300 mb-1.5">كلمة المرور</label>
               <div className="relative">
-                <input
-                  type={showPass ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  dir="ltr"
-                  required
-                  className="w-full px-4 py-2.5 pl-10 rounded-xl bg-grey-700 border border-grey-600 text-white text-sm placeholder:text-grey-500 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition-all"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPass(!showPass)}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-grey-500 hover:text-grey-300 transition-colors"
-                >
-                  <span className="material-icons-outlined text-lg">
-                    {showPass ? 'visibility_off' : 'visibility'}
-                  </span>
+                <input type={showPass ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••" dir="ltr" required
+                  className="w-full px-4 py-2.5 pl-10 rounded-xl bg-grey-700 border border-grey-600 text-white text-sm placeholder:text-grey-500 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition-all" />
+                <button type="button" onClick={() => setShowPass(!showPass)}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-grey-500 hover:text-grey-300 transition-colors">
+                  <span className="material-icons-outlined text-lg">{showPass ? 'visibility_off' : 'visibility'}</span>
                 </button>
               </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full py-3 rounded-xl bg-brand-800 text-white font-semibold text-sm hover:bg-brand-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              {isLoading ? (
+            <button type="submit" disabled={submitting}
+              className="w-full py-3 rounded-xl bg-brand-800 text-white font-semibold text-sm hover:bg-brand-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+              {submitting ? (
                 <>
                   <span className="material-icons-outlined animate-spin text-lg">progress_activity</span>
                   جاري الدخول...
