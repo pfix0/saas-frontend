@@ -1,240 +1,351 @@
 'use client';
 
 /**
- * ساس — صفحة الشحن
- * محادثة ٩
+ * ساس — Shipping Management Dashboard
+ * محادثة ١١: إدارة الشحنات الكاملة
+ * قائمة الشحنات + إنشاء شحنة + تتبع + طباعة بوليصة
  */
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 
-interface ShippingStats {
-  by_method: Array<{ method: string; label: string; orders: number; total_cost: number }>;
-  by_status: Array<{ status: string; count: number }>;
-  pending_shipments: number;
-  in_transit: number;
-}
-
-const statusLabels: Record<string, { label: string; color: string; icon: string }> = {
-  new: { label: 'جديد', color: 'bg-blue-100 text-blue-700', icon: 'fiber_new' },
-  confirmed: { label: 'مؤكد', color: 'bg-indigo-100 text-indigo-700', icon: 'check' },
-  processing: { label: 'تجهيز', color: 'bg-amber-100 text-amber-700', icon: 'inventory' },
-  shipped: { label: 'تم الشحن', color: 'bg-purple-100 text-purple-700', icon: 'local_shipping' },
-  delivered: { label: 'تم التوصيل', color: 'bg-emerald-100 text-emerald-700', icon: 'check_circle' },
-  cancelled: { label: 'ملغي', color: 'bg-red-100 text-red-700', icon: 'cancel' },
-  returned: { label: 'مرتجع', color: 'bg-grey-100 text-grey-500', icon: 'undo' },
-};
-
-const shippingIcons: Record<string, string> = {
-  aramex: 'local_shipping',
-  dhl: 'flight',
-  pickup: 'store',
-};
-
-interface ShipmentOrder {
+interface Shipment {
   id: string;
+  order_id: string;
   order_number: string;
+  carrier: string;
+  tracking_number: string;
+  awb_number?: string;
   status: string;
-  shipping_method: string;
+  label_url?: string;
+  estimated_delivery?: string;
+  actual_delivery?: string;
+  created_at: string;
   customer_name: string;
   customer_phone: string;
-  total: number;
-  shipping_cost: number;
-  created_at: string;
+  city: string;
+  area: string;
 }
 
-export default function ShippingPage() {
-  const [stats, setStats] = useState<ShippingStats | null>(null);
-  const [shipments, setShipments] = useState<ShipmentOrder[]>([]);
+interface TrackingEvent {
+  timestamp: string;
+  status: string;
+  description: string;
+  location: string;
+}
+
+const statusMap: Record<string, { label: string; color: string; icon: string }> = {
+  pending: { label: 'قيد التجهيز', color: 'bg-grey-100 text-grey-600', icon: 'schedule' },
+  picked_up: { label: 'تم الاستلام', color: 'bg-blue-100 text-blue-700', icon: 'inventory_2' },
+  in_transit: { label: 'في الطريق', color: 'bg-amber-100 text-amber-700', icon: 'local_shipping' },
+  out_for_delivery: { label: 'خارج للتوصيل', color: 'bg-violet-100 text-violet-700', icon: 'delivery_dining' },
+  delivered: { label: 'تم التوصيل', color: 'bg-emerald-100 text-emerald-700', icon: 'check_circle' },
+  returned: { label: 'مرتجع', color: 'bg-red-100 text-red-700', icon: 'keyboard_return' },
+  failed: { label: 'فشل', color: 'bg-red-100 text-red-700', icon: 'error' },
+};
+
+const carrierLabels: Record<string, { label: string; color: string }> = {
+  aramex: { label: 'Aramex', color: 'bg-orange-100 text-orange-700' },
+  dhl: { label: 'DHL', color: 'bg-yellow-100 text-yellow-700' },
+  local: { label: 'محلي', color: 'bg-emerald-100 text-emerald-700' },
+  pickup: { label: 'استلام', color: 'bg-blue-100 text-blue-700' },
+};
+
+export default function ShippingDashboardPage() {
+  const [shipments, setShipments] = useState<Shipment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState('pending');
+  const [filter, setFilter] = useState({ status: 'all', carrier: 'all', page: 1 });
   const [pagination, setPagination] = useState({ total: 0, page: 1, pages: 0 });
+  const [selectedShipment, setSelectedShipment] = useState<Shipment | null>(null);
+  const [trackingEvents, setTrackingEvents] = useState<TrackingEvent[]>([]);
+  const [trackingLoading, setTrackingLoading] = useState(false);
+  const [toast, setToast] = useState('');
+  const [stats, setStats] = useState({ total: 0, pending: 0, in_transit: 0, delivered: 0, returned: 0 });
 
-  useEffect(() => {
-    loadStats();
-  }, []);
+  useEffect(() => { loadShipments(); }, [filter]);
+  useEffect(() => { loadStats(); }, []);
 
-  useEffect(() => {
-    loadShipments();
-  }, [statusFilter]);
-
-  const loadStats = async () => {
+  const loadShipments = async () => {
+    setLoading(true);
     try {
-      const res = await api.get('/api/finance/shipping-stats');
-      setStats(res.data);
+      const params = new URLSearchParams({ page: String(filter.page), limit: '15' });
+      if (filter.status !== 'all') params.set('status', filter.status);
+      if (filter.carrier !== 'all') params.set('carrier', filter.carrier);
+      const res = await api.get(`/api/shipping/shipments?${params}`);
+      setShipments(res.data || []);
+      setPagination(res.pagination || { total: 0, page: 1, pages: 0 });
     } catch {}
     setLoading(false);
   };
 
-  const loadShipments = async () => {
+  const loadStats = async () => {
     try {
-      // Filter orders that need shipping
-      const statusMap: Record<string, string> = {
-        pending: 'confirmed,processing',
-        shipped: 'shipped',
-        delivered: 'delivered',
-        all: '',
-      };
-      const statuses = statusMap[statusFilter] || '';
-      const params = new URLSearchParams({ limit: '20' });
-      if (statuses) params.set('status', statuses);
-
-      const res = await api.get(`/api/orders?${params}`);
-      // Filter out pickup orders for shipping tab
-      const filtered = statusFilter === 'all'
-        ? res.data
-        : res.data.filter((o: any) => o.shipping_method !== 'pickup');
-      setShipments(filtered);
-      setPagination(res.pagination || { total: filtered.length, page: 1, pages: 1 });
+      const res = await api.get('/api/shipping/stats');
+      if (res.data) setStats(res.data);
     } catch {}
   };
 
-  const fmt = (n: number) => n.toLocaleString('ar-QA', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  const loadTracking = async (shipment: Shipment) => {
+    setSelectedShipment(shipment);
+    setTrackingLoading(true);
+    setTrackingEvents([]);
+    try {
+      const res = await api.get(`/api/shipping/${shipment.id}/tracking`);
+      setTrackingEvents(res.data?.events || []);
+    } catch {}
+    setTrackingLoading(false);
+  };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <span className="material-icons-outlined text-3xl text-grey-300 animate-spin">sync</span>
-      </div>
-    );
-  }
+  const printLabel = async (shipmentId: string) => {
+    try {
+      const res = await api.get(`/api/shipping/${shipmentId}/label`);
+      if (res.data?.url) window.open(res.data.url, '_blank');
+      else showToast('لا تتوفر بوليصة شحن');
+    } catch { showToast('خطأ في تحميل البوليصة'); }
+  };
+
+  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
+  const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString('ar-QA', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
 
   return (
     <div className="space-y-6">
+      {toast && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-grey-900 text-white px-5 py-3 rounded-xl text-sm font-bold shadow-xl z-50 animate-slide-down">{toast}</div>
+      )}
+
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-xl font-bold text-grey-900">الشحن</h1>
-          <p className="text-sm text-grey-500 mt-0.5">إدارة الشحنات والتوصيل</p>
+          <h1 className="text-xl font-bold text-grey-900">إدارة الشحن</h1>
+          <p className="text-sm text-grey-500 mt-0.5">تتبع وإدارة شحنات متجرك</p>
         </div>
-        <Link href="/dashboard/settings" className="flex items-center gap-1 px-3 py-2 rounded-lg bg-grey-50 text-xs font-bold text-grey-600 hover:bg-grey-100">
+        <Link href="/dashboard/settings/shipping-carriers"
+          className="px-4 py-2.5 rounded-xl bg-grey-100 text-grey-600 text-sm font-bold hover:bg-grey-200 transition-all flex items-center gap-2">
           <span className="material-icons-outlined text-sm">settings</span>
           إعدادات الشحن
         </Link>
       </div>
 
-      {/* Stats Cards */}
-      {stats && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="bg-white rounded-xl p-4 border border-grey-100">
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+        {[
+          { icon: 'inventory_2', color: 'text-grey-500', label: 'الكل', value: stats.total },
+          { icon: 'schedule', color: 'text-amber-500', label: 'قيد التجهيز', value: stats.pending },
+          { icon: 'local_shipping', color: 'text-blue-500', label: 'في الطريق', value: stats.in_transit },
+          { icon: 'check_circle', color: 'text-emerald-500', label: 'تم التوصيل', value: stats.delivered },
+          { icon: 'keyboard_return', color: 'text-red-500', label: 'مرتجع', value: stats.returned },
+        ].map((s, i) => (
+          <div key={i} className="bg-white rounded-xl p-4 border border-grey-100">
             <div className="flex items-center gap-2 mb-2">
-              <span className="material-icons-outlined text-amber-500 text-lg">inventory</span>
-              <span className="text-xs text-grey-500">بانتظار الشحن</span>
+              <span className={`material-icons-outlined text-lg ${s.color}`}>{s.icon}</span>
+              <span className="text-xs text-grey-500">{s.label}</span>
             </div>
-            <p className="text-2xl font-black text-grey-900">{stats.pending_shipments}</p>
+            <p className="text-2xl font-black text-grey-900">{s.value.toLocaleString('ar-QA')}</p>
           </div>
-          <div className="bg-white rounded-xl p-4 border border-grey-100">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="material-icons-outlined text-purple-500 text-lg">local_shipping</span>
-              <span className="text-xs text-grey-500">في الطريق</span>
-            </div>
-            <p className="text-2xl font-black text-grey-900">{stats.in_transit}</p>
-          </div>
-          {stats.by_method.filter(m => m.method !== 'pickup').map((m) => (
-            <div key={m.method} className="bg-white rounded-xl p-4 border border-grey-100">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="material-icons-outlined text-brand-800 text-lg">{shippingIcons[m.method] || 'local_shipping'}</span>
-                <span className="text-xs text-grey-500">{m.label}</span>
-              </div>
-              <p className="text-2xl font-black text-grey-900">{m.orders} <span className="text-sm font-normal text-grey-400">طلب</span></p>
-              <p className="text-xs text-grey-400 mt-0.5">تكلفة: {fmt(m.total_cost)} ر.ق</p>
-            </div>
+        ))}
+      </div>
+
+      {/* Filters */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex gap-1 bg-grey-50 rounded-lg p-1">
+          {[
+            { key: 'all', label: 'الكل' }, { key: 'pending', label: 'قيد التجهيز' },
+            { key: 'in_transit', label: 'في الطريق' }, { key: 'delivered', label: 'تم التوصيل' },
+            { key: 'returned', label: 'مرتجع' },
+          ].map((f) => (
+            <button key={f.key} onClick={() => setFilter({ ...filter, status: f.key, page: 1 })}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                filter.status === f.key ? 'bg-brand-800 text-white' : 'text-grey-500 hover:bg-grey-100'
+              }`}>{f.label}</button>
           ))}
         </div>
-      )}
-
-      {/* Shipping Methods Summary */}
-      {stats && stats.by_method.length > 0 && (
-        <div className="bg-white rounded-xl border border-grey-100 p-5">
-          <h2 className="text-sm font-bold text-grey-900 mb-4">توزيع الشحنات</h2>
-          <div className="space-y-3">
-            {stats.by_method.map((m) => {
-              const totalOrders = stats.by_method.reduce((sum, x) => sum + x.orders, 0);
-              const pct = totalOrders > 0 ? ((m.orders / totalOrders) * 100).toFixed(0) : '0';
-              return (
-                <div key={m.method} className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-grey-50 flex items-center justify-center flex-shrink-0">
-                    <span className="material-icons-outlined text-grey-600 text-lg">{shippingIcons[m.method] || 'local_shipping'}</span>
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-bold text-grey-800">{m.label}</span>
-                      <span className="text-sm text-grey-600">{m.orders} طلب</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 h-2 bg-grey-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-brand-800 rounded-full" style={{ width: `${pct}%` }} />
-                      </div>
-                      <span className="text-xs text-grey-400 w-10 text-left">{pct}%</span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+        <div className="flex gap-1 bg-grey-50 rounded-lg p-1">
+          {[
+            { key: 'all', label: 'كل الشركات' }, { key: 'aramex', label: 'Aramex' },
+            { key: 'dhl', label: 'DHL' }, { key: 'local', label: 'محلي' },
+          ].map((f) => (
+            <button key={f.key} onClick={() => setFilter({ ...filter, carrier: f.key, page: 1 })}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                filter.carrier === f.key ? 'bg-grey-700 text-white' : 'text-grey-500 hover:bg-grey-100'
+              }`}>{f.label}</button>
+          ))}
         </div>
-      )}
-
-      {/* Shipments List */}
-      <div className="bg-white rounded-xl border border-grey-100 overflow-hidden">
-        <div className="p-4 border-b border-grey-50 flex items-center justify-between flex-wrap gap-2">
-          <h2 className="text-sm font-bold text-grey-900">الشحنات</h2>
-          <div className="flex gap-1">
-            {[
-              { key: 'pending', label: 'بانتظار الشحن' },
-              { key: 'shipped', label: 'تم الشحن' },
-              { key: 'delivered', label: 'تم التوصيل' },
-              { key: 'all', label: 'الكل' },
-            ].map((f) => (
-              <button
-                key={f.key}
-                onClick={() => setStatusFilter(f.key)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                  statusFilter === f.key
-                    ? 'bg-brand-800 text-white'
-                    : 'bg-grey-50 text-grey-500 hover:bg-grey-100'
-                }`}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {shipments.length === 0 ? (
-          <div className="p-12 text-center">
-            <span className="material-icons-outlined text-3xl text-grey-200">local_shipping</span>
-            <p className="text-sm text-grey-400 mt-2">لا توجد شحنات</p>
-          </div>
-        ) : (
-          <div className="divide-y divide-grey-50">
-            {shipments.map((order) => {
-              const st = statusLabels[order.status] || statusLabels.new;
-              return (
-                <Link key={order.id} href={`/dashboard/orders/${order.id}`} className="block p-4 hover:bg-grey-25 transition-colors">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-brand-800">{order.order_number}</span>
-                      <span className={`px-2 py-0.5 rounded-lg text-[0.65rem] font-bold ${st.color}`}>{st.label}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="material-icons-outlined text-sm text-grey-400">{shippingIcons[order.shipping_method] || 'local_shipping'}</span>
-                      <span className="text-xs text-grey-500">
-                        {order.shipping_method === 'aramex' ? 'أرامكس' : order.shipping_method === 'dhl' ? 'DHL' : 'استلام'}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between text-xs text-grey-500">
-                    <span>{order.customer_name} • {order.customer_phone}</span>
-                    <span>{new Date(order.created_at).toLocaleDateString('ar-QA', { month: 'short', day: 'numeric' })}</span>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        )}
       </div>
+
+      <div className="grid lg:grid-cols-3 gap-6">
+        {/* Shipments List */}
+        <div className="lg:col-span-2">
+          <div className="bg-white rounded-xl border border-grey-100 overflow-hidden">
+            {loading ? (
+              <div className="p-12 text-center">
+                <span className="material-icons-outlined text-3xl text-grey-300 animate-spin">sync</span>
+              </div>
+            ) : shipments.length === 0 ? (
+              <div className="p-12 text-center">
+                <span className="material-icons-outlined text-4xl text-grey-200">local_shipping</span>
+                <p className="text-sm text-grey-400 mt-2">لا توجد شحنات</p>
+                <p className="text-xs text-grey-300 mt-1">ستظهر الشحنات عند إنشائها من صفحة الطلبات</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-grey-50">
+                {shipments.map((sh) => {
+                  const st = statusMap[sh.status] || statusMap.pending;
+                  const cr = carrierLabels[sh.carrier] || { label: sh.carrier, color: 'bg-grey-100 text-grey-600' };
+                  const isSelected = selectedShipment?.id === sh.id;
+
+                  return (
+                    <button key={sh.id} onClick={() => loadTracking(sh)}
+                      className={`w-full p-4 text-right hover:bg-grey-25 transition-all ${isSelected ? 'bg-brand-50/30 border-r-2 border-brand-800' : ''}`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <Link href={`/dashboard/orders/${sh.order_id}`}
+                            className="text-sm font-bold text-brand-800 hover:underline" onClick={e => e.stopPropagation()}>
+                            {sh.order_number}
+                          </Link>
+                          <span className={`px-2 py-0.5 rounded-lg text-[0.65rem] font-bold ${cr.color}`}>{cr.label}</span>
+                        </div>
+                        <span className={`px-2 py-1 rounded-lg text-xs font-bold flex items-center gap-1 ${st.color}`}>
+                          <span className="material-icons-outlined text-[14px]">{st.icon}</span>
+                          {st.label}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-grey-600">{sh.customer_name}</span>
+                        <span className="text-xs text-grey-400">{sh.city}{sh.area ? `، ${sh.area}` : ''}</span>
+                      </div>
+                      {sh.tracking_number && (
+                        <div className="flex items-center justify-between mt-1.5">
+                          <span className="text-xs text-grey-400 font-mono">{sh.tracking_number}</span>
+                          <span className="text-xs text-grey-300">{fmtDate(sh.created_at)}</span>
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {pagination.pages > 1 && (
+              <div className="flex items-center justify-center gap-2 p-4 border-t border-grey-50">
+                <button disabled={filter.page <= 1} onClick={() => setFilter({ ...filter, page: filter.page - 1 })}
+                  className="p-2 rounded-lg bg-grey-50 hover:bg-grey-100 disabled:opacity-30">
+                  <span className="material-icons-outlined text-sm">chevron_right</span>
+                </button>
+                <span className="text-xs text-grey-500 px-3">{filter.page} / {pagination.pages}</span>
+                <button disabled={filter.page >= pagination.pages} onClick={() => setFilter({ ...filter, page: filter.page + 1 })}
+                  className="p-2 rounded-lg bg-grey-50 hover:bg-grey-100 disabled:opacity-30">
+                  <span className="material-icons-outlined text-sm">chevron_left</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Tracking Panel */}
+        <div className="lg:col-span-1">
+          <div className="bg-white rounded-xl border border-grey-100 sticky top-20 overflow-hidden">
+            {!selectedShipment ? (
+              <div className="p-8 text-center">
+                <span className="material-icons-outlined text-4xl text-grey-200">local_shipping</span>
+                <p className="text-sm text-grey-400 mt-2">اختر شحنة لعرض التتبع</p>
+              </div>
+            ) : (
+              <div>
+                <div className="p-4 bg-grey-50 border-b border-grey-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-bold text-grey-900">تتبع الشحنة</h3>
+                    <button onClick={() => setSelectedShipment(null)} className="p-1 rounded-lg hover:bg-grey-200">
+                      <span className="material-icons-outlined text-sm text-grey-400">close</span>
+                    </button>
+                  </div>
+                  <p className="text-xs text-grey-500">{selectedShipment.order_number}</p>
+                  {selectedShipment.tracking_number && (
+                    <p className="text-xs text-grey-400 font-mono mt-0.5">{selectedShipment.tracking_number}</p>
+                  )}
+                </div>
+
+                <div className="p-4">
+                  {(() => {
+                    const st = statusMap[selectedShipment.status] || statusMap.pending;
+                    return (
+                      <div className={`flex items-center gap-2 px-3 py-2 rounded-xl mb-4 ${st.color}`}>
+                        <span className="material-icons-outlined text-lg">{st.icon}</span>
+                        <span className="text-sm font-bold">{st.label}</span>
+                      </div>
+                    );
+                  })()}
+
+                  <div className="space-y-2 mb-4">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-grey-400">العميل</span>
+                      <span className="text-grey-700 font-semibold">{selectedShipment.customer_name}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-grey-400">الموقع</span>
+                      <span className="text-grey-700">{selectedShipment.city}{selectedShipment.area ? `، ${selectedShipment.area}` : ''}</span>
+                    </div>
+                    {selectedShipment.estimated_delivery && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-grey-400">التوصيل المتوقع</span>
+                        <span className="text-grey-700">{fmtDate(selectedShipment.estimated_delivery)}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2 mb-4">
+                    <button onClick={() => printLabel(selectedShipment.id)}
+                      className="flex-1 py-2 rounded-lg bg-brand-50 text-brand-800 text-xs font-bold hover:bg-brand-100 transition-all flex items-center justify-center gap-1">
+                      <span className="material-icons-outlined text-sm">print</span>
+                      بوليصة
+                    </button>
+                    <a href={`tel:${selectedShipment.customer_phone}`}
+                      className="flex-1 py-2 rounded-lg bg-grey-50 text-grey-600 text-xs font-bold hover:bg-grey-100 transition-all flex items-center justify-center gap-1">
+                      <span className="material-icons-outlined text-sm">call</span>
+                      اتصال
+                    </a>
+                  </div>
+
+                  <h4 className="text-xs font-bold text-grey-700 mb-3">سجل التتبع</h4>
+                  {trackingLoading ? (
+                    <div className="text-center py-6">
+                      <span className="material-icons-outlined text-xl text-grey-300 animate-spin">sync</span>
+                    </div>
+                  ) : trackingEvents.length === 0 ? (
+                    <div className="text-center py-6">
+                      <p className="text-xs text-grey-400">لا توجد أحداث تتبع بعد</p>
+                    </div>
+                  ) : (
+                    <div className="relative pr-6">
+                      <div className="absolute right-[7px] top-2 bottom-2 w-0.5 bg-grey-100" />
+                      <div className="space-y-4">
+                        {trackingEvents.map((ev, i) => (
+                          <div key={i} className="relative">
+                            <div className={`absolute right-[-17px] w-4 h-4 rounded-full border-2 border-white shadow-sm
+                              ${i === 0 ? 'bg-brand-800' : 'bg-grey-300'}`} />
+                            <div>
+                              <p className={`text-xs font-bold ${i === 0 ? 'text-grey-900' : 'text-grey-600'}`}>{ev.description}</p>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                {ev.location && <span className="text-[0.65rem] text-grey-400">{ev.location}</span>}
+                                <span className="text-[0.65rem] text-grey-300">{fmtDate(ev.timestamp)}</span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <style jsx global>{`
+        @keyframes slideDown { from { opacity: 0; transform: translate(-50%, -20px); } to { opacity: 1; transform: translate(-50%, 0); } }
+        .animate-slide-down { animation: slideDown 0.3s ease-out; }
+      `}</style>
     </div>
   );
 }

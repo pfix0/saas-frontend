@@ -88,6 +88,15 @@ saas-frontend/
 ├── stores/
 │   ├── auth.ts                 # مصادقة (register/login/logout)
 │   ├── cart.ts                 # سلة التسوق
+│   ├── payment.ts              # بوابات الدفع (SkipCash/SADAD/COD)
+│   ├── shipping.ts             # شركات الشحن (Aramex/DHL/محلي)
+│   ├── coupons.ts              # الكوبونات
+│   ├── customers.ts            # العملاء
+│   ├── orders.ts               # الطلبات
+│   ├── products.ts             # المنتجات
+│   ├── settings.ts             # إعدادات المتجر
+│   ├── wishlist.ts             # المفضلة
+│   ├── admin.ts                # لوحة تحكم المنصة
 │   └── ui.ts                   # حالة الواجهة
 ├── lib/
 │   ├── api.ts                  # API client → Railway
@@ -257,8 +266,9 @@ async rewrites() {
 | 8 | الكوبونات + إعدادات المتجر | ✅ مكتمل |
 | 9 | المالية + الشحن + Checkout ديناميكي | ✅ مكتمل |
 | 8* | البحث + المفضلة + التقييمات + الصفحات | ✅ مكتمل |
-| 10-11 | تكامل بوابات الدفع + الشحن الفعلي | 🔜 التالي |
-| 12-15 | تقارير + تسويق متقدم + ثيمات | ⏳ قادم |
+| 10 | تكامل بوابات الدفع (SkipCash + SADAD) | ✅ مكتمل |
+| 11 | تكامل شركات الشحن (Aramex + DHL) | ✅ مكتمل |
+| 12-15 | تقارير + تسويق متقدم + ثيمات | 🔜 التالي |
 | 16-18 | الأمان + النشر النهائي + Landing Page | ⏳ قادم |
 
 ---
@@ -279,6 +289,35 @@ async rewrites() {
 | **الخروج** | زر "العودة للوحة الإدارة" يمسح الجلسة ويرجعك |
 
 ---
+
+### محادثة ١٠ — تكامل بوابات الدفع 💳 (فبراير ٢٠٢٦)
+- ✅ صفحة معالجة الدفع `/store/[store]/payment` (redirect + verify + success + failed + expired)
+- ✅ تكامل SkipCash — إعدادات كاملة (Merchant ID, API Key, Secret, Sandbox)
+- ✅ تكامل SADAD — إعدادات كاملة (Merchant ID, Terminal ID, Secret, Sandbox)
+- ✅ الدفع عند الاستلام (COD) مع حد أقصى للمبلغ
+- ✅ تحويل بنكي — عرض بيانات الحساب + نسخ IBAN + تعليمات
+- ✅ صفحة إعدادات بوابات الدفع المفصّلة `/dashboard/settings/payment-gateways`
+- ✅ زر اختبار الاتصال لكل بوابة
+- ✅ وضع Sandbox للاختبار
+- ✅ Webhook URLs للـ callbacks
+- ✅ Zustand Payment Store (initiate, verify, checkStatus, refund)
+- ✅ تحديث Checkout لتوجيه الدفع الإلكتروني تلقائياً
+- ✅ أنيميشن حالات الدفع (loading, redirecting, verifying, success, failed)
+
+### محادثة ١١ — تكامل شركات الشحن 🚚 (فبراير ٢٠٢٦)
+- ✅ لوحة إدارة شحن كاملة `/dashboard/shipping` — قائمة + فلاتر + تتبع
+- ✅ تكامل Aramex — إعدادات كاملة (Username, Password, Account, PIN, Entity)
+- ✅ تكامل DHL — إعدادات كاملة (API Key, Secret, Account Number)
+- ✅ توصيل محلي — سعر ثابت + مناطق مخصصة
+- ✅ استلام من المتجر — عنوان + ساعات عمل
+- ✅ شحن مجاني — تفعيل + حد أدنى
+- ✅ صفحة إعدادات شركات الشحن `/dashboard/settings/shipping-carriers`
+- ✅ لوحة تتبع جانبية (Timeline بصري مع أحداث التتبع)
+- ✅ طباعة بوليصة الشحن (AWB)
+- ✅ إحصائيات الشحن (قيد التجهيز، في الطريق، تم التوصيل، مرتجع)
+- ✅ فلترة حسب الحالة + شركة الشحن
+- ✅ Zustand Shipping Store (shipments, rates, tracking, carriers)
+- ✅ أنواع TypeScript محدّثة (PaymentSession, expanded PaymentGateway, ShippingCarrier)
 
 ### محادثة ٨ (الحقيقية) — البحث + المفضلة + التقييمات + الصفحات 🔍 (فبراير ٢٠٢٦)
 - ✅ بحث فوري في header المتجر مع اقتراحات ديناميكية (debounced 300ms)

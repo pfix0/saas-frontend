@@ -12,9 +12,9 @@ export type MerchantRole = 'owner' | 'admin' | 'staff';
 export type ProductType = 'physical' | 'digital';
 export type ProductStatus = 'active' | 'draft' | 'archived';
 export type OrderStatus = 'new' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'returned';
-export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
-export type PaymentGateway = 'sadad' | 'skipcash' | 'cod';
-export type ShippingCarrier = 'aramex' | 'dhl';
+export type PaymentStatus = 'pending' | 'processing' | 'paid' | 'failed' | 'expired' | 'refunded';
+export type PaymentGateway = 'sadad' | 'skipcash' | 'cod' | 'bank_transfer';
+export type ShippingCarrier = 'aramex' | 'dhl' | 'local' | 'pickup';
 export type ShipmentStatus = 'pending' | 'picked_up' | 'in_transit' | 'out_for_delivery' | 'delivered' | 'returned' | 'failed';
 export type CouponType = 'percentage' | 'fixed';
 
@@ -221,6 +221,24 @@ export interface OrderStatusHistory {
   note?: string;
   changed_by?: string;
   created_at: string;
+}
+
+// ═══ Payment Session (جلسة الدفع الإلكتروني) ═══
+
+export interface PaymentSession extends BaseModel {
+  tenant_id: string;
+  order_id: string;
+  order_number: string;
+  gateway: PaymentGateway;
+  amount: number;
+  currency: string;
+  status: PaymentStatus;
+  redirect_url?: string;
+  callback_url?: string;
+  gateway_ref?: string;
+  expires_at?: string;
+  verified_at?: string;
+  raw_response?: Record<string, any>;
 }
 
 // ═══ Payment (المعاملة) ═══

@@ -197,7 +197,14 @@ export default function CheckoutPage({ params }: { params: { store: string } }) 
 
       if (data.success) {
         clearCart();
-        router.push(`${base}/order/${data.data.order_number}`);
+        const onlinePayments = ['skipcash', 'sadad', 'bank_transfer'];
+        if (onlinePayments.includes(paymentMethod)) {
+          // Redirect to payment processing page
+          router.push(`${base}/payment?order=${data.data.id}&gateway=${paymentMethod}`);
+        } else {
+          // COD or other — go directly to order confirmation
+          router.push(`${base}/order/${data.data.order_number}`);
+        }
       } else {
         setError(data.error || 'حدث خطأ في إنشاء الطلب');
       }
