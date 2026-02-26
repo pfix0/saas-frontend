@@ -1,5 +1,5 @@
 /**
- * ساس — Input Component
+ * ساس — Input Component (Flex-based layout)
  */
 
 import { cn } from '@/lib/utils';
@@ -26,9 +26,17 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             {label}
           </label>
         )}
-        <div className="relative">
+        <div
+          className={cn(
+            'flex items-center gap-2 w-full py-2.5 px-3 rounded-saas border bg-white transition-colors',
+            'focus-within:border-brand-800 focus-within:ring-2 focus-within:ring-brand-800/10',
+            error
+              ? 'border-danger focus-within:border-danger focus-within:ring-danger/10'
+              : 'border-grey-200'
+          )}
+        >
           {icon && (
-            <span className="material-icons-outlined absolute right-3 top-1/2 -translate-y-1/2 text-grey-300 text-lg">
+            <span className="material-icons-outlined text-grey-300 text-lg shrink-0">
               {icon}
             </span>
           )}
@@ -36,11 +44,9 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             id={inputId}
             className={cn(
-              'input',
-              error && 'input-error',
+              'flex-1 min-w-0 bg-transparent text-grey-800 text-sm placeholder:text-grey-400 outline-none border-none',
               className
             )}
-            style={icon ? { paddingRight: '2.75rem' } : undefined}
             {...props}
           />
         </div>

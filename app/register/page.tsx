@@ -189,16 +189,17 @@ export default function RegisterPage() {
               <label className="block text-sm font-semibold text-grey-700 mb-1.5">
                 كلمة المرور
               </label>
-              <div className="relative">
-                <span className="material-icons-outlined absolute right-3 top-1/2 -translate-y-1/2 text-grey-300 text-lg">
+              <div 
+                className={`flex items-center gap-2 w-full py-2.5 px-3 rounded-saas border bg-white transition-colors focus-within:border-brand-800 focus-within:ring-2 focus-within:ring-brand-800/10 ${errors.password ? 'border-danger focus-within:border-danger focus-within:ring-danger/10' : 'border-grey-200'}`}
+              >
+                <span className="material-icons-outlined text-grey-300 text-lg shrink-0">
                   lock_outline
                 </span>
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={form.password}
                   onChange={e => set('password', e.target.value)}
-                  className={`input ${errors.password ? 'input-error' : ''}`}
-                  style={{ paddingRight: '2.75rem', paddingLeft: '2.75rem' }}
+                  className="flex-1 min-w-0 bg-transparent text-grey-800 text-sm placeholder:text-grey-400 outline-none border-none"
                   placeholder="٨ أحرف على الأقل"
                   dir="ltr"
                   autoComplete="new-password"
@@ -206,7 +207,7 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-grey-300 hover:text-brand-800 transition-colors"
+                  className="text-grey-300 hover:text-brand-800 transition-colors shrink-0"
                   tabIndex={-1}
                 >
                   <span className="material-icons-outlined text-lg">
