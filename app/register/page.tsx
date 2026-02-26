@@ -200,6 +200,7 @@ export default function RegisterPage() {
                   border: `1px solid ${errors.password ? '#dc2626' : '#e5e5e5'}`,
                   backgroundColor: '#fff',
                   transition: 'border-color 0.15s, box-shadow 0.15s',
+                  direction: 'rtl' as const,
                 }}
                 onFocus={(e) => {
                   e.currentTarget.style.borderColor = errors.password ? '#dc2626' : '#660033';
@@ -210,18 +211,6 @@ export default function RegisterPage() {
                   e.currentTarget.style.boxShadow = 'none';
                 }}
               >
-                <span className="material-icons-outlined" style={{ color: '#bbb', fontSize: '1.125rem', flexShrink: 0 }}>
-                  lock_outline
-                </span>
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={form.password}
-                  onChange={e => set('password', e.target.value)}
-                  style={{ flex: '1 1 0%', minWidth: 0, background: 'transparent', color: '#374151', fontSize: '0.875rem', outline: 'none', border: 'none', padding: 0, margin: 0, width: '100%' }}
-                  placeholder="٨ أحرف على الأقل"
-                  dir="ltr"
-                  autoComplete="new-password"
-                />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
@@ -232,6 +221,17 @@ export default function RegisterPage() {
                     {showPassword ? 'visibility_off' : 'visibility'}
                   </span>
                 </button>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={form.password}
+                  onChange={e => set('password', e.target.value)}
+                  style={{ flex: 1, minWidth: 0, background: 'transparent', color: '#374151', fontSize: '0.875rem', outline: 'none', border: 'none', padding: 0, margin: 0, width: '100%', textAlign: 'right', direction: 'ltr' as const }}
+                  placeholder="٨ أحرف على الأقل"
+                  autoComplete="new-password"
+                />
+                <span className="material-icons-outlined" style={{ color: '#bbb', fontSize: '1.125rem', flexShrink: 0 }}>
+                  lock_outline
+                </span>
               </div>
               {errors.password && (
                 <p className="text-xs text-danger mt-1 flex items-center gap-1">

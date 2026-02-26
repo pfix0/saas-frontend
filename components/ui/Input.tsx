@@ -1,5 +1,5 @@
 /**
- * ساس — Input Component
+ * ساس — Input Component (RTL-aware, pure inline styles)
  */
 
 import { forwardRef } from 'react';
@@ -10,31 +10,6 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   hint?: string;
   icon?: string;
 }
-
-const wrapperBase: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '0.5rem',
-  width: '100%',
-  padding: '0.625rem 0.75rem',
-  borderRadius: '0.75rem',
-  border: '1px solid #e5e5e5',
-  backgroundColor: '#fff',
-  transition: 'border-color 0.15s, box-shadow 0.15s',
-};
-
-const inputInner: React.CSSProperties = {
-  flex: '1 1 0%',
-  minWidth: 0,
-  background: 'transparent',
-  color: '#374151',
-  fontSize: '0.875rem',
-  outline: 'none',
-  border: 'none',
-  padding: 0,
-  margin: 0,
-  width: '100%',
-};
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ label, error, hint, icon, className, id, style, ...props }, ref) => {
@@ -52,8 +27,16 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         )}
         <div
           style={{
-            ...wrapperBase,
-            borderColor: error ? '#dc2626' : '#e5e5e5',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            width: '100%',
+            padding: '0.625rem 0.75rem',
+            borderRadius: '0.75rem',
+            border: `1px solid ${error ? '#dc2626' : '#e5e5e5'}`,
+            backgroundColor: '#fff',
+            transition: 'border-color 0.15s, box-shadow 0.15s',
+            direction: 'rtl',
           }}
           onFocus={(e) => {
             e.currentTarget.style.borderColor = error ? '#dc2626' : '#660033';
@@ -66,6 +49,26 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             e.currentTarget.style.boxShadow = 'none';
           }}
         >
+          <input
+            ref={ref}
+            id={inputId}
+            style={{
+              flex: 1,
+              minWidth: 0,
+              background: 'transparent',
+              color: '#374151',
+              fontSize: '0.875rem',
+              outline: 'none',
+              border: 'none',
+              padding: 0,
+              margin: 0,
+              width: '100%',
+              textAlign: 'right',
+              direction: 'ltr',
+              ...style,
+            }}
+            {...props}
+          />
           {icon && (
             <span
               className="material-icons-outlined"
@@ -74,12 +77,6 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
               {icon}
             </span>
           )}
-          <input
-            ref={ref}
-            id={inputId}
-            style={inputInner}
-            {...props}
-          />
         </div>
         {error && (
           <p className="text-xs text-danger mt-1 flex items-center gap-1">
