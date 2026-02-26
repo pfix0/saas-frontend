@@ -125,7 +125,7 @@ function LoginForm() {
               type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={e => { setPassword(e.target.value); clearField('password'); }}
-              className={`input pr-10 pl-10 ${errors.password ? 'input-error' : ''}`}
+              className={`w-full py-2.5 pr-10 pl-10 rounded-saas border bg-white text-grey-800 text-sm transition-colors focus:border-brand-800 focus:ring-2 focus:ring-brand-800/10 focus:outline-none placeholder:text-grey-400 ${errors.password ? 'border-danger focus:border-danger focus:ring-danger/10' : 'border-grey-200'}`}
               placeholder="••••••••"
               dir="ltr"
               autoComplete="current-password"
