@@ -114,6 +114,7 @@ interface AdminState {
   updateTenantStatus: (id: string, status: string) => Promise<boolean>;
   updateTenantPlan: (id: string, plan: string) => Promise<boolean>;
   deleteTenant: (id: string) => Promise<boolean>;
+  impersonate: (merchantId: string) => Promise<boolean>;
   
   hasAccess: (section: string) => boolean;
   canModify: () => boolean;
@@ -229,6 +230,27 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   deleteTenant: async (id) => {
     try { await adminFetch(`/tenants/${id}`, { method: 'DELETE' });
       set((s) => ({ tenants: s.tenants.filter(t => t.id !== id), tenantsTotal: s.tenantsTotal - 1 })); return true;
+    } catch (err) { set({ error: (err as ApiError).message }); return false; }
+  },
+
+  impersonate: async (merchantId) => {
+    try {
+      const result = await adminFetch(`/impersonate/${merchantId}`, { method: 'POST' });
+      const { token, merchant, tenant, impersonatedBy } = result.data;
+
+      // Save merchant token (same keys the merchant auth uses)
+      localStorage.setItem('saas_access_token', token);
+      document.cookie = `saas_access_token=${token}; path=/; max-age=7200; SameSite=Strict`;
+
+      // Save impersonation info for the banner
+      localStorage.setItem('saas_impersonation', JSON.stringify({
+        adminEmail: impersonatedBy.email,
+        adminRole: impersonatedBy.role,
+        merchantName: merchant.name,
+        tenantName: tenant.name,
+      }));
+
+      return true;
     } catch (err) { set({ error: (err as ApiError).message }); return false; }
   },
 
