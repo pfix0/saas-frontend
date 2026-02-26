@@ -197,7 +197,7 @@ export default function RegisterPage() {
                   type={showPassword ? 'text' : 'password'}
                   value={form.password}
                   onChange={e => set('password', e.target.value)}
-                  className={`input !pr-10 !pl-10 ${errors.password ? 'input-error' : ''}`}
+                  className={`input has-icons ${errors.password ? 'input-error' : ''}`}
                   placeholder="٨ أحرف على الأقل"
                   dir="ltr"
                   autoComplete="new-password"

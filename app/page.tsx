@@ -132,6 +132,21 @@ export default function HomePage() {
             </Link>
           </div>
 
+          {/* Demo Links */}
+          <div className="flex items-center justify-center gap-4 mb-16">
+            <a href="/store/demo-store" target="_blank"
+              className="flex items-center gap-1.5 text-sm text-grey-400 hover:text-brand-800 transition-colors">
+              <span className="material-icons-outlined text-base">storefront</span>
+              معاينة متجر
+            </a>
+            <span className="text-grey-200">|</span>
+            <a href="/demo/dashboard"
+              className="flex items-center gap-1.5 text-sm text-grey-400 hover:text-brand-800 transition-colors">
+              <span className="material-icons-outlined text-base">dashboard</span>
+              معاينة لوحة التحكم
+            </a>
+          </div>
+
           {/* Stats */}
           <div className="grid grid-cols-3 gap-6 max-w-lg mx-auto">
             {[

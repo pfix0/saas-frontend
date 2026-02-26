@@ -125,7 +125,7 @@ function LoginForm() {
               type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={e => { setPassword(e.target.value); clearField('password'); }}
-              className={`w-full py-2.5 pr-10 pl-10 rounded-saas border bg-white text-grey-800 text-sm transition-colors focus:border-brand-800 focus:ring-2 focus:ring-brand-800/10 focus:outline-none placeholder:text-grey-400 ${errors.password ? 'border-danger focus:border-danger focus:ring-danger/10' : 'border-grey-200'}`}
+              className={`input has-icons ${errors.password ? 'input-error' : ''}`}
               placeholder="••••••••"
               dir="ltr"
               autoComplete="current-password"
@@ -173,6 +173,23 @@ function LoginForm() {
         <span className="material-icons-outlined text-lg">person_add</span>
         إنشاء حساب جديد
       </Link>
+
+      {/* معاينة تجريبية */}
+      <div className="mt-6 p-4 rounded-2xl bg-grey-50 border border-grey-100">
+        <p className="text-xs font-semibold text-grey-600 mb-3 text-center">شاهد المنصة قبل التسجيل</p>
+        <div className="grid grid-cols-2 gap-2">
+          <a href="/store/demo-store" target="_blank"
+            className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-white border border-grey-200 text-grey-600 text-xs font-semibold hover:border-brand-300 hover:text-brand-800 transition-all">
+            <span className="material-icons-outlined text-sm">storefront</span>
+            معاينة متجر
+          </a>
+          <a href="/demo/dashboard" 
+            className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-white border border-grey-200 text-grey-600 text-xs font-semibold hover:border-brand-300 hover:text-brand-800 transition-all">
+            <span className="material-icons-outlined text-sm">dashboard</span>
+            معاينة لوحة التحكم
+          </a>
+        </div>
+      </div>
 
       {/* شروط */}
       <p className="text-center text-[0.65rem] text-grey-300 mt-8 leading-relaxed">

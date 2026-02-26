@@ -37,7 +37,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             id={inputId}
             className={cn(
               'input',
-              icon && 'pr-10',
+              icon && 'has-icon-right',
               error && 'input-error',
               className
             )}

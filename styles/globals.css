@@ -145,10 +145,15 @@ h1, h2, h3, h4, h5, h6 {
 
   /* Input */
   .input {
-    @apply w-full px-4 py-2.5 rounded-saas border border-grey-200 bg-white text-grey-800 text-sm transition-colors;
+    @apply w-full py-2.5 rounded-saas border border-grey-200 bg-white text-grey-800 text-sm transition-colors;
     @apply focus:border-brand-800 focus:ring-2 focus:ring-brand-800/10 focus:outline-none;
     @apply placeholder:text-grey-400;
+    padding-right: 1rem;
+    padding-left: 1rem;
   }
+  .input.has-icon-right { padding-right: 2.5rem; }
+  .input.has-icon-left { padding-left: 2.5rem; }
+  .input.has-icons { padding-right: 2.5rem; padding-left: 2.5rem; }
   .input-error {
     @apply border-danger focus:border-danger focus:ring-danger/10;
   }
