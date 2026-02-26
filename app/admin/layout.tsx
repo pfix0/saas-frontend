@@ -24,12 +24,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { admin, isAuthenticated, isLoading, fetchProfile, logout } = useAdminStore();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  if (pathname === '/admin/login') return <>{children}</>;
+  const isLoginPage = pathname === '/admin/login';
 
-  useEffect(() => { fetchProfile(); }, []);
+  // ═══ Hooks ALWAYS called (before any return) ═══
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) router.push('/admin/login');
-  }, [isLoading, isAuthenticated]);
+    if (!isLoginPage) fetchProfile();
+  }, [isLoginPage]);
+
+  useEffect(() => {
+    if (!isLoginPage && !isLoading && !isAuthenticated) {
+      router.push('/admin/login');
+    }
+  }, [isLoginPage, isLoading, isAuthenticated]);
+
+  // ═══ Now safe to do conditional returns ═══
+  if (isLoginPage) return <>{children}</>;
 
   if (isLoading) {
     return (
