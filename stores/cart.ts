@@ -1,85 +1,76 @@
 /**
- * ساس — Cart Store (Zustand)
- * Will be fully implemented in Session 5
+ * ساس — Shopping Cart Store (Zustand)
+ * سلة التسوق — client-side فقط
  */
 
 import { create } from 'zustand';
 
 export interface CartItem {
-  productId: string;
-  variantId?: string;
+  id: string;
   name: string;
+  slug: string;
   price: number;
+  salePrice?: number;
+  image?: string;
   quantity: number;
-  imageUrl?: string;
-  options?: Record<string, string>;
 }
 
 interface CartState {
   items: CartItem[];
   isOpen: boolean;
-  
-  // Actions
-  addItem: (item: CartItem) => void;
-  removeItem: (productId: string, variantId?: string) => void;
-  updateQuantity: (productId: string, quantity: number, variantId?: string) => void;
+
+  addItem: (item: Omit<CartItem, 'quantity'>, qty?: number) => void;
+  removeItem: (id: string) => void;
+  updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
   toggleCart: () => void;
-  
-  // Computed
+  setCartOpen: (open: boolean) => void;
+
   totalItems: () => number;
-  subtotal: () => number;
+  totalPrice: () => number;
+}
+
+function loadCart(): CartItem[] {
+  if (typeof window === 'undefined') return [];
+  try { return JSON.parse(localStorage.getItem('saas_cart') || '[]'); }
+  catch { return []; }
+}
+function saveCart(items: CartItem[]) {
+  if (typeof window !== 'undefined') localStorage.setItem('saas_cart', JSON.stringify(items));
 }
 
 export const useCartStore = create<CartState>((set, get) => ({
-  items: [],
+  items: loadCart(),
   isOpen: false,
 
-  addItem: (item) => {
-    set((state) => {
-      const existing = state.items.find(
-        (i) => i.productId === item.productId && i.variantId === item.variantId
-      );
+  addItem: (item, qty = 1) => set((s) => {
+    const existing = s.items.find(i => i.id === item.id);
+    const newItems = existing
+      ? s.items.map(i => i.id === item.id ? { ...i, quantity: i.quantity + qty } : i)
+      : [...s.items, { ...item, quantity: qty }];
+    saveCart(newItems);
+    return { items: newItems, isOpen: true };
+  }),
 
-      if (existing) {
-        return {
-          items: state.items.map((i) =>
-            i.productId === item.productId && i.variantId === item.variantId
-              ? { ...i, quantity: i.quantity + item.quantity }
-              : i
-          ),
-        };
-      }
+  removeItem: (id) => set((s) => {
+    const newItems = s.items.filter(i => i.id !== id);
+    saveCart(newItems);
+    return { items: newItems };
+  }),
 
-      return { items: [...state.items, item] };
+  updateQuantity: (id, quantity) => {
+    if (quantity < 1) return get().removeItem(id);
+    set((s) => {
+      const newItems = s.items.map(i => i.id === id ? { ...i, quantity } : i);
+      saveCart(newItems);
+      return { items: newItems };
     });
   },
 
-  removeItem: (productId, variantId) => {
-    set((state) => ({
-      items: state.items.filter(
-        (i) => !(i.productId === productId && i.variantId === variantId)
-      ),
-    }));
-  },
-
-  updateQuantity: (productId, quantity, variantId) => {
-    if (quantity <= 0) {
-      get().removeItem(productId, variantId);
-      return;
-    }
-    set((state) => ({
-      items: state.items.map((i) =>
-        i.productId === productId && i.variantId === variantId
-          ? { ...i, quantity }
-          : i
-      ),
-    }));
-  },
-
-  clearCart: () => set({ items: [] }),
-  toggleCart: () => set((state) => ({ isOpen: !state.isOpen })),
+  clearCart: () => { saveCart([]); set({ items: [] }); },
+  toggleCart: () => set(s => ({ isOpen: !s.isOpen })),
+  setCartOpen: (open) => set({ isOpen: open }),
 
   totalItems: () => get().items.reduce((sum, i) => sum + i.quantity, 0),
-  subtotal: () => get().items.reduce((sum, i) => sum + i.price * i.quantity, 0),
+  totalPrice: () => get().items.reduce((sum, i) => sum + (i.salePrice || i.price) * i.quantity, 0),
 }));
