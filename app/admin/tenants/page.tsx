@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { useAdminStore } from '@/stores/admin';
+import { useAdminStore, ROLE_CONFIG } from '@/stores/admin';
 
 const planLabels: Record<string, { label: string; color: string }> = {
   basic: { label: 'أساس', color: 'bg-grey-600' },
@@ -22,7 +22,7 @@ const statusOptions: Record<string, { label: string; class: string }> = {
 export default function AdminTenantsPage() {
   const {
     tenants, tenantsTotal, isLoading,
-    fetchTenants, updateTenantStatus, updateTenantPlan, deleteTenant,
+    fetchTenants, updateTenantStatus, updateTenantPlan, deleteTenant, canModify, canDelete,
   } = useAdminStore();
 
   const [search, setSearch] = useState('');

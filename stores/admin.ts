@@ -1,16 +1,20 @@
 /**
  * ساس — Platform Admin Store (Zustand)
- * إدارة مصادقة وبيانات مدير المنصة
+ * منظومة إدارة المنصة — ٦ أدوار
  */
 
 import { create } from 'zustand';
-import { api, ApiError } from '@/lib/api';
+import { ApiError } from '@/lib/api';
+
+// ═══ Types ═══
+type PlatformRole = 'founder' | 'director' | 'supervisor' | 'support' | 'accountant' | 'employee';
 
 interface PlatformAdmin {
   id: string;
   name: string;
   email: string;
-  role: 'super_admin' | 'admin';
+  role: PlatformRole;
+  permissions: string[];
 }
 
 interface PlatformStats {
@@ -23,70 +27,65 @@ interface PlatformStats {
   todayRevenue: number;
   recentSignups: number;
   planStats: any[];
+  financialData: any;
 }
 
 interface TenantItem {
-  id: string;
-  name: string;
-  slug: string;
-  plan: string;
-  status: string;
-  currency: string;
-  created_at: string;
-  products_count: number;
-  orders_count: number;
-  revenue: number;
-  owner_name: string;
-  owner_email: string;
+  id: string; name: string; slug: string; plan: string; status: string;
+  created_at: string; products_count: number; orders_count: number;
+  revenue: number; owner_name: string; owner_email: string;
 }
 
 interface MerchantItem {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  role: string;
-  status: string;
-  last_login_at: string;
-  created_at: string;
-  tenant_name: string;
-  tenant_slug: string;
-  tenant_plan: string;
-  tenant_status: string;
+  id: string; name: string; email: string; phone: string; role: string;
+  status: string; last_login_at: string; created_at: string;
+  tenant_name: string; tenant_slug: string; tenant_plan: string;
 }
 
-// ═══ Cookie Helpers ═══
-function setAdminCookie(token: string) {
-  if (typeof document === 'undefined') return;
-  document.cookie = `saas_admin_token=${token}; path=/; max-age=${2 * 60 * 60}; SameSite=Strict`;
+interface StaffMember {
+  id: string; name: string; email: string; role: PlatformRole;
+  permissions: string[]; status: string; last_login_at: string; created_at: string;
 }
 
-function clearAdminCookie() {
-  if (typeof document === 'undefined') return;
-  document.cookie = 'saas_admin_token=; path=/; max-age=0';
-}
-
-function getAdminToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('saas_admin_token');
-}
-
-// ═══ Admin API helper ═══
-async function adminRequest<T = any>(endpoint: string, options: { method?: string; body?: any } = {}): Promise<T> {
+// ═══ API helper — uses relative URL (goes through Next.js rewrites) ═══
+async function adminFetch<T = any>(endpoint: string, options: { method?: string; body?: any } = {}): Promise<T> {
   const { method = 'GET', body } = options;
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  const token = getAdminToken();
-  if (token) headers['Authorization'] = `Bearer ${token}`;
+  
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('saas_admin_token');
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+  }
 
   const config: RequestInit = { method, headers };
   if (body && method !== 'GET') config.body = JSON.stringify(body);
 
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
-  const res = await fetch(`${baseUrl}/api/admin${endpoint}`, config);
+  // Use RELATIVE URL — Next.js rewrites → Railway
+  const res = await fetch(`/api/admin${endpoint}`, config);
   const data = await res.json();
   if (!res.ok) throw new ApiError(data.error || 'حدث خطأ', res.status);
   return data;
 }
+
+// ═══ Cookie helpers ═══
+function setCookie(token: string) {
+  if (typeof document === 'undefined') return;
+  document.cookie = `saas_admin_token=${token}; path=/; max-age=${7200}; SameSite=Strict`;
+}
+function clearCookie() {
+  if (typeof document === 'undefined') return;
+  document.cookie = 'saas_admin_token=; path=/; max-age=0';
+}
+
+// ═══ Role permissions map ═══
+export const ROLE_CONFIG: Record<PlatformRole, { label: string; icon: string; color: string; nav: string[] }> = {
+  founder:    { label: 'مؤسس',     icon: 'diamond',             color: 'text-amber-400',  nav: ['overview', 'tenants', 'merchants', 'staff', 'finance'] },
+  director:   { label: 'مدير',     icon: 'admin_panel_settings', color: 'text-brand-400',  nav: ['overview', 'tenants', 'merchants', 'staff', 'finance'] },
+  supervisor: { label: 'مشرف',     icon: 'supervisor_account',  color: 'text-blue-400',   nav: ['overview', 'tenants', 'merchants'] },
+  support:    { label: 'دعم فني',  icon: 'support_agent',       color: 'text-green-400',  nav: ['overview', 'tenants', 'merchants'] },
+  accountant: { label: 'محاسب',    icon: 'account_balance',     color: 'text-purple-400', nav: ['overview', 'finance'] },
+  employee:   { label: 'موظف',     icon: 'badge',               color: 'text-grey-400',   nav: ['overview'] },
+};
 
 // ═══ Store ═══
 interface AdminState {
@@ -94,51 +93,46 @@ interface AdminState {
   isLoading: boolean;
   isAuthenticated: boolean;
   error: string | null;
-  
   stats: PlatformStats | null;
   tenants: TenantItem[];
   merchants: MerchantItem[];
+  staff: StaffMember[];
   tenantsTotal: number;
   merchantsTotal: number;
-  
-  // Auth
+
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   fetchProfile: () => Promise<void>;
-  
-  // Data
   fetchStats: () => Promise<void>;
-  fetchTenants: (params?: { search?: string; status?: string; plan?: string; page?: number }) => Promise<void>;
-  fetchMerchants: (params?: { search?: string; page?: number }) => Promise<void>;
+  fetchTenants: (params?: Record<string, any>) => Promise<void>;
+  fetchMerchants: (params?: Record<string, any>) => Promise<void>;
+  fetchStaff: () => Promise<void>;
+  addStaff: (data: { name: string; email: string; password: string; role: string }) => Promise<boolean>;
+  updateStaffRole: (id: string, role: string) => Promise<boolean>;
+  updateStaffStatus: (id: string, status: string) => Promise<boolean>;
+  deleteStaffMember: (id: string) => Promise<boolean>;
   updateTenantStatus: (id: string, status: string) => Promise<boolean>;
   updateTenantPlan: (id: string, plan: string) => Promise<boolean>;
   deleteTenant: (id: string) => Promise<boolean>;
   
+  hasAccess: (section: string) => boolean;
+  canModify: () => boolean;
+  canDelete: () => boolean;
   clearError: () => void;
 }
 
 export const useAdminStore = create<AdminState>((set, get) => ({
-  admin: null,
-  isLoading: true,
-  isAuthenticated: false,
-  error: null,
-  stats: null,
-  tenants: [],
-  merchants: [],
-  tenantsTotal: 0,
-  merchantsTotal: 0,
+  admin: null, isLoading: true, isAuthenticated: false, error: null,
+  stats: null, tenants: [], merchants: [], staff: [],
+  tenantsTotal: 0, merchantsTotal: 0,
 
-  // ═══ Login ═══
   login: async (email, password) => {
     set({ isLoading: true, error: null });
     try {
-      const result = await adminRequest('/auth/login', {
-        method: 'POST',
-        body: { email, password },
-      });
+      const result = await adminFetch('/auth/login', { method: 'POST', body: { email, password } });
       localStorage.setItem('saas_admin_token', result.data.tokens.accessToken);
       localStorage.setItem('saas_admin_refresh', result.data.tokens.refreshToken);
-      setAdminCookie(result.data.tokens.accessToken);
+      setCookie(result.data.tokens.accessToken);
       set({ admin: result.data.admin, isAuthenticated: true, isLoading: false });
       return true;
     } catch (err) {
@@ -147,110 +141,111 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     }
   },
 
-  // ═══ Logout ═══
   logout: () => {
     localStorage.removeItem('saas_admin_token');
     localStorage.removeItem('saas_admin_refresh');
-    clearAdminCookie();
+    clearCookie();
     set({ admin: null, isAuthenticated: false, isLoading: false });
   },
 
-  // ═══ Fetch Profile ═══
   fetchProfile: async () => {
-    const token = getAdminToken();
-    if (!token) { set({ isLoading: false, isAuthenticated: false }); return; }
+    if (typeof window === 'undefined' || !localStorage.getItem('saas_admin_token')) {
+      set({ isLoading: false, isAuthenticated: false }); return;
+    }
     try {
-      const result = await adminRequest('/auth/me');
+      const result = await adminFetch('/auth/me');
       set({ admin: result.data.admin, isAuthenticated: true, isLoading: false });
     } catch {
       localStorage.removeItem('saas_admin_token');
-      clearAdminCookie();
+      clearCookie();
       set({ admin: null, isAuthenticated: false, isLoading: false });
     }
   },
 
-  // ═══ Stats ═══
   fetchStats: async () => {
-    try {
-      const result = await adminRequest('/stats');
-      set({ stats: result.data });
-    } catch (err) {
-      console.error('Failed to fetch stats:', err);
-    }
+    try { const r = await adminFetch('/stats'); set({ stats: r.data }); } catch (e) { console.error(e); }
   },
 
-  // ═══ Tenants ═══
   fetchTenants: async (params = {}) => {
     set({ isLoading: true });
     try {
       const qs = new URLSearchParams();
-      if (params.search) qs.set('search', params.search);
-      if (params.status) qs.set('status', params.status);
-      if (params.plan) qs.set('plan', params.plan);
-      qs.set('page', String(params.page || 1));
-      const result = await adminRequest(`/tenants?${qs}`);
-      set({ tenants: result.data, tenantsTotal: result.pagination?.total || 0, isLoading: false });
-    } catch (err) {
-      set({ isLoading: false, error: (err as ApiError).message });
-    }
+      Object.entries(params).forEach(([k, v]) => { if (v) qs.set(k, String(v)); });
+      const r = await adminFetch(`/tenants?${qs}`);
+      set({ tenants: r.data, tenantsTotal: r.pagination?.total || 0, isLoading: false });
+    } catch (err) { set({ isLoading: false, error: (err as ApiError).message }); }
   },
 
-  // ═══ Merchants ═══
   fetchMerchants: async (params = {}) => {
     set({ isLoading: true });
     try {
       const qs = new URLSearchParams();
-      if (params.search) qs.set('search', params.search);
-      qs.set('page', String(params.page || 1));
-      const result = await adminRequest(`/merchants?${qs}`);
-      set({ merchants: result.data, merchantsTotal: result.pagination?.total || 0, isLoading: false });
-    } catch (err) {
-      set({ isLoading: false, error: (err as ApiError).message });
-    }
+      Object.entries(params).forEach(([k, v]) => { if (v) qs.set(k, String(v)); });
+      const r = await adminFetch(`/merchants?${qs}`);
+      set({ merchants: r.data, merchantsTotal: r.pagination?.total || 0, isLoading: false });
+    } catch (err) { set({ isLoading: false, error: (err as ApiError).message }); }
   },
 
-  // ═══ Update Tenant Status ═══
+  fetchStaff: async () => {
+    try { const r = await adminFetch('/staff'); set({ staff: r.data }); } catch (e) { console.error(e); }
+  },
+
+  addStaff: async (data) => {
+    set({ error: null });
+    try { await adminFetch('/staff', { method: 'POST', body: data }); get().fetchStaff(); return true; }
+    catch (err) { set({ error: (err as ApiError).message }); return false; }
+  },
+
+  updateStaffRole: async (id, role) => {
+    try { await adminFetch(`/staff/${id}/role`, { method: 'PUT', body: { role } });
+      set((s) => ({ staff: s.staff.map(m => m.id === id ? { ...m, role: role as PlatformRole } : m) })); return true;
+    } catch (err) { set({ error: (err as ApiError).message }); return false; }
+  },
+
+  updateStaffStatus: async (id, status) => {
+    try { await adminFetch(`/staff/${id}/status`, { method: 'PUT', body: { status } });
+      set((s) => ({ staff: s.staff.map(m => m.id === id ? { ...m, status } : m) })); return true;
+    } catch (err) { set({ error: (err as ApiError).message }); return false; }
+  },
+
+  deleteStaffMember: async (id) => {
+    try { await adminFetch(`/staff/${id}`, { method: 'DELETE' });
+      set((s) => ({ staff: s.staff.filter(m => m.id !== id) })); return true;
+    } catch (err) { set({ error: (err as ApiError).message }); return false; }
+  },
+
   updateTenantStatus: async (id, status) => {
-    try {
-      await adminRequest(`/tenants/${id}/status`, { method: 'PUT', body: { status } });
-      set((s) => ({
-        tenants: s.tenants.map((t) => (t.id === id ? { ...t, status } : t)),
-      }));
-      return true;
-    } catch (err) {
-      set({ error: (err as ApiError).message });
-      return false;
-    }
+    try { await adminFetch(`/tenants/${id}/status`, { method: 'PUT', body: { status } });
+      set((s) => ({ tenants: s.tenants.map(t => t.id === id ? { ...t, status } : t) })); return true;
+    } catch (err) { set({ error: (err as ApiError).message }); return false; }
   },
 
-  // ═══ Update Tenant Plan ═══
   updateTenantPlan: async (id, plan) => {
-    try {
-      await adminRequest(`/tenants/${id}/plan`, { method: 'PUT', body: { plan } });
-      set((s) => ({
-        tenants: s.tenants.map((t) => (t.id === id ? { ...t, plan } : t)),
-      }));
-      return true;
-    } catch (err) {
-      set({ error: (err as ApiError).message });
-      return false;
-    }
+    try { await adminFetch(`/tenants/${id}/plan`, { method: 'PUT', body: { plan } });
+      set((s) => ({ tenants: s.tenants.map(t => t.id === id ? { ...t, plan } : t) })); return true;
+    } catch (err) { set({ error: (err as ApiError).message }); return false; }
   },
 
-  // ═══ Delete Tenant ═══
   deleteTenant: async (id) => {
-    try {
-      await adminRequest(`/tenants/${id}`, { method: 'DELETE' });
-      set((s) => ({
-        tenants: s.tenants.filter((t) => t.id !== id),
-        tenantsTotal: s.tenantsTotal - 1,
-      }));
-      return true;
-    } catch (err) {
-      set({ error: (err as ApiError).message });
-      return false;
-    }
+    try { await adminFetch(`/tenants/${id}`, { method: 'DELETE' });
+      set((s) => ({ tenants: s.tenants.filter(t => t.id !== id), tenantsTotal: s.tenantsTotal - 1 })); return true;
+    } catch (err) { set({ error: (err as ApiError).message }); return false; }
   },
+
+  // ═══ Permission helpers ═══
+  hasAccess: (section) => {
+    const admin = get().admin;
+    if (!admin) return false;
+    const cfg = ROLE_CONFIG[admin.role];
+    return cfg?.nav.includes(section) || false;
+  },
+
+  canModify: () => {
+    const role = get().admin?.role;
+    return role === 'founder' || role === 'director';
+  },
+
+  canDelete: () => get().admin?.role === 'founder',
 
   clearError: () => set({ error: null }),
 }));
