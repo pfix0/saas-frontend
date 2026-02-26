@@ -98,15 +98,19 @@ export default function Sidebar() {
 
       {/* Store link */}
       {tenant && (
-        <div className="flex-shrink-0 p-4 border-t border-grey-100">
+        <div className="flex-shrink-0 p-3 border-t border-grey-100">
           <a
             href={`/store/${tenant.slug}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 text-xs text-grey-400 hover:text-brand-800 transition-colors px-2 py-2 rounded-lg hover:bg-grey-50"
+            className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-brand-50 border border-brand-100 text-brand-800 hover:bg-brand-100 transition-all"
           >
-            <span className="material-icons-outlined text-sm">open_in_new</span>
-            زيارة المتجر
+            <span className="material-icons-outlined text-lg">storefront</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold">عرض المتجر</p>
+              <p className="text-[0.55rem] text-brand-600 truncate">{tenant.slug}.saas.qa</p>
+            </div>
+            <span className="material-icons-outlined text-sm text-brand-400">open_in_new</span>
           </a>
         </div>
       )}

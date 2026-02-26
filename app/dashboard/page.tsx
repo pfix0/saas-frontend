@@ -157,12 +157,22 @@ export default function DashboardHome() {
     <div className="animate-fade-in">
       {/* Welcome */}
       <div className="mb-6">
-        <h1 className="font-tajawal text-2xl font-bold text-grey-900">
-          مرحباً {merchant?.name?.split(' ')[0] || ''} 👋
-        </h1>
-        <p className="text-sm text-grey-400 mt-1">
-          إليك ملخص أداء متجرك اليوم
-        </p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="font-tajawal text-2xl font-bold text-grey-900">
+              مرحباً {merchant?.name?.split(' ')[0] || ''} 👋
+            </h1>
+            <p className="text-sm text-grey-400 mt-1">إليك ملخص أداء متجرك اليوم</p>
+          </div>
+          {tenant?.slug && (
+            <a href={`/store/${tenant.slug}`} target="_blank"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-50 text-brand-800 text-sm font-semibold hover:bg-brand-100 border border-brand-200 transition-all">
+              <span className="material-icons-outlined text-lg">storefront</span>
+              عرض المتجر
+              <span className="material-icons-outlined text-sm">open_in_new</span>
+            </a>
+          )}
+        </div>
       </div>
 
       {/* Stats Grid */}

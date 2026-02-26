@@ -146,7 +146,13 @@ export default function AdminTenantsPage() {
                     <tr key={t.id} className="border-b border-grey-700/20 hover:bg-grey-700/20 transition-colors group">
                       <td className="px-4 py-3">
                         <p className="font-semibold text-white">{t.name}</p>
-                        <p className="text-xs text-grey-500 font-mono">{t.slug}.saas.qa</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs text-grey-500 font-mono">{t.slug}.saas.qa</p>
+                          <a href={`/store/${t.slug}`} target="_blank"
+                            className="text-[0.6rem] text-brand-400 hover:text-brand-300 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <span className="material-icons-outlined text-[10px]">open_in_new</span>عرض
+                          </a>
+                        </div>
                       </td>
                       <td className="px-4 py-3 hidden md:table-cell">
                         <p className="text-grey-300 text-xs">{t.owner_name || '—'}</p>

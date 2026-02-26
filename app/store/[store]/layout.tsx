@@ -12,7 +12,7 @@ import { useCartStore } from '@/stores/cart';
 interface StoreData {
   id: string; name: string; slug: string;
   logo_url?: string; description?: string;
-  currency: string;
+  currency: string; status?: string;
 }
 
 export default function StorefrontLayout({
@@ -39,6 +39,8 @@ export default function StorefrontLayout({
       .catch(() => setNotFound(true));
   }, [store]);
 
+  const isTrial = storeData?.status === 'trial';
+
   if (notFound) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center px-4">
@@ -54,6 +56,16 @@ export default function StorefrontLayout({
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
+      {/* Trial Banner */}
+      {isTrial && (
+        <div className="bg-amber-50 border-b border-amber-200">
+          <div className="max-w-6xl mx-auto px-4 py-2 flex items-center justify-center gap-2">
+            <span className="material-icons-outlined text-amber-500 text-sm">info</span>
+            <p className="text-xs text-amber-700 font-semibold">هذا المتجر في الوضع التجريبي — معاينة فقط</p>
+          </div>
+        </div>
+      )}
+
       {/* ═══ Header ═══ */}
       <header className="bg-white border-b border-grey-100 sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
