@@ -1,8 +1,7 @@
 /**
- * ساس — Input Component (Flex-based layout)
+ * ساس — Input Component
  */
 
-import { cn } from '@/lib/utils';
 import { forwardRef } from 'react';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -12,12 +11,37 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   icon?: string;
 }
 
+const wrapperBase: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '0.5rem',
+  width: '100%',
+  padding: '0.625rem 0.75rem',
+  borderRadius: '0.75rem',
+  border: '1px solid #e5e5e5',
+  backgroundColor: '#fff',
+  transition: 'border-color 0.15s, box-shadow 0.15s',
+};
+
+const inputInner: React.CSSProperties = {
+  flex: '1 1 0%',
+  minWidth: 0,
+  background: 'transparent',
+  color: '#374151',
+  fontSize: '0.875rem',
+  outline: 'none',
+  border: 'none',
+  padding: 0,
+  margin: 0,
+  width: '100%',
+};
+
 const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, hint, icon, className, id, ...props }, ref) => {
+  ({ label, error, hint, icon, className, id, style, ...props }, ref) => {
     const inputId = id || label?.replace(/\s/g, '-');
 
     return (
-      <div className="w-full">
+      <div style={{ width: '100%' }}>
         {label && (
           <label
             htmlFor={inputId}
@@ -27,26 +51,33 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           </label>
         )}
         <div
-          className={cn(
-            'flex items-center gap-2 w-full py-2.5 px-3 rounded-saas border bg-white transition-colors',
-            'focus-within:border-brand-800 focus-within:ring-2 focus-within:ring-brand-800/10',
-            error
-              ? 'border-danger focus-within:border-danger focus-within:ring-danger/10'
-              : 'border-grey-200'
-          )}
+          style={{
+            ...wrapperBase,
+            borderColor: error ? '#dc2626' : '#e5e5e5',
+          }}
+          onFocus={(e) => {
+            e.currentTarget.style.borderColor = error ? '#dc2626' : '#660033';
+            e.currentTarget.style.boxShadow = error
+              ? '0 0 0 2px rgba(220,38,38,0.1)'
+              : '0 0 0 2px rgba(102,0,51,0.1)';
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.borderColor = error ? '#dc2626' : '#e5e5e5';
+            e.currentTarget.style.boxShadow = 'none';
+          }}
         >
           {icon && (
-            <span className="material-icons-outlined text-grey-300 text-lg shrink-0">
+            <span
+              className="material-icons-outlined"
+              style={{ color: '#bbb', fontSize: '1.125rem', flexShrink: 0 }}
+            >
               {icon}
             </span>
           )}
           <input
             ref={ref}
             id={inputId}
-            className={cn(
-              'flex-1 min-w-0 bg-transparent text-grey-800 text-sm placeholder:text-grey-400 outline-none border-none',
-              className
-            )}
+            style={inputInner}
             {...props}
           />
         </div>

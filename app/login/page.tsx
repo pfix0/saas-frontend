@@ -118,16 +118,36 @@ function LoginForm() {
             </button>
           </div>
           <div 
-            className={`flex items-center gap-2 w-full py-2.5 px-3 rounded-saas border bg-white transition-colors focus-within:border-brand-800 focus-within:ring-2 focus-within:ring-brand-800/10 ${errors.password ? 'border-danger focus-within:border-danger focus-within:ring-danger/10' : 'border-grey-200'}`}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              width: '100%',
+              padding: '0.625rem 0.75rem',
+              borderRadius: '0.75rem',
+              border: `1px solid ${errors.password ? '#dc2626' : '#e5e5e5'}`,
+              backgroundColor: '#fff',
+              transition: 'border-color 0.15s, box-shadow 0.15s',
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = errors.password ? '#dc2626' : '#660033';
+              e.currentTarget.style.boxShadow = errors.password
+                ? '0 0 0 2px rgba(220,38,38,0.1)'
+                : '0 0 0 2px rgba(102,0,51,0.1)';
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = errors.password ? '#dc2626' : '#e5e5e5';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
           >
-            <span className="material-icons-outlined text-grey-300 text-lg shrink-0">
+            <span className="material-icons-outlined" style={{ color: '#bbb', fontSize: '1.125rem', flexShrink: 0 }}>
               lock_outline
             </span>
             <input
               type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={e => { setPassword(e.target.value); clearField('password'); }}
-              className="flex-1 min-w-0 bg-transparent text-grey-800 text-sm placeholder:text-grey-400 outline-none border-none"
+              style={{ flex: '1 1 0%', minWidth: 0, background: 'transparent', color: '#374151', fontSize: '0.875rem', outline: 'none', border: 'none', padding: 0, margin: 0, width: '100%' }}
               placeholder="••••••••"
               dir="ltr"
               autoComplete="current-password"
@@ -135,10 +155,10 @@ function LoginForm() {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="text-grey-300 hover:text-brand-800 transition-colors shrink-0"
+              style={{ color: '#bbb', flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
               tabIndex={-1}
             >
-              <span className="material-icons-outlined text-lg">
+              <span className="material-icons-outlined" style={{ fontSize: '1.125rem' }}>
                 {showPassword ? 'visibility_off' : 'visibility'}
               </span>
             </button>
