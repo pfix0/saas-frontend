@@ -19,15 +19,8 @@ const QATAR_CITIES = [
   'أم صلال', 'الضعاين', 'مسيعيد', 'دخان', 'الذخيرة',
 ];
 
-const SHIPPING_METHODS = [
-  { id: 'aramex', name: 'أرامكس', icon: 'local_shipping', cost: 25, eta: '٢-٣ أيام عمل' },
-  { id: 'dhl', name: 'DHL', icon: 'flight', cost: 35, eta: '١-٢ يوم عمل' },
-  { id: 'pickup', name: 'استلام من المتجر', icon: 'storefront', cost: 0, eta: 'فوري' },
-];
-
-const PAYMENT_METHODS = [
-  { id: 'cod', name: 'الدفع عند الاستلام', icon: 'payments', desc: 'ادفع نقداً عند التوصيل' },
-];
+const SHIPPING_METHODS: any[] = []; // loaded dynamically
+const PAYMENT_METHODS: any[] = []; // loaded dynamically
 
 interface CouponData {
   code: string;
@@ -64,9 +57,12 @@ export default function CheckoutPage({ params }: { params: { store: string } }) 
   const [addressNotes, setAddressNotes] = useState('');
 
   // Shipping & Payment
-  const [shippingMethod, setShippingMethod] = useState('aramex');
-  const [paymentMethod, setPaymentMethod] = useState('cod');
+  const [shippingMethod, setShippingMethod] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('');
   const [customerNotes, setCustomerNotes] = useState('');
+  const [shippingMethods, setShippingMethods] = useState<any[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
+  const [freeShipping, setFreeShipping] = useState({ enabled: false, min: 0 });
 
   // Coupon
   const [couponCode, setCouponCode] = useState('');
@@ -81,9 +77,35 @@ export default function CheckoutPage({ params }: { params: { store: string } }) 
     }
   }, [items.length, base, router]);
 
+  // Fetch checkout options (dynamic payment/shipping)
+  useEffect(() => {
+    const fetchOptions = async () => {
+      try {
+        const res = await fetch(`/api/store/${store}/checkout-options`);
+        const data = await res.json();
+        if (data.success) {
+          const sm = data.data.shipping_methods.map((m: any) => ({
+            id: m.key, name: m.label, icon: m.icon, cost: m.cost, address: m.address,
+          }));
+          const pm = data.data.payment_methods.map((m: any) => ({
+            id: m.key, name: m.label, icon: m.icon, details: m.details,
+          }));
+          setShippingMethods(sm);
+          setPaymentMethods(pm);
+          setFreeShipping(data.data.free_shipping || { enabled: false, min: 0 });
+          if (sm.length > 0 && !shippingMethod) setShippingMethod(sm[0].id);
+          if (pm.length > 0 && !paymentMethod) setPaymentMethod(pm[0].id);
+        }
+      } catch {}
+    };
+    fetchOptions();
+  }, [store]);
+
   // ═══ Calculations ═══
   const subtotal = totalPrice();
-  const shippingCost = SHIPPING_METHODS.find(m => m.id === shippingMethod)?.cost || 0;
+  const rawShippingCost = shippingMethods.find(m => m.id === shippingMethod)?.cost || 0;
+  const isFreeShipping = freeShipping.enabled && subtotal >= freeShipping.min;
+  const shippingCost = isFreeShipping ? 0 : rawShippingCost;
   const discount = couponData?.discount || 0;
   const total = subtotal - discount + shippingCost;
 
@@ -372,8 +394,23 @@ export default function CheckoutPage({ params }: { params: { store: string } }) 
                   <h2 className="font-tajawal text-base font-bold text-grey-900">طريقة التوصيل</h2>
                 </div>
 
+                {/* Free shipping indicator */}
+                {freeShipping.enabled && (
+                  isFreeShipping ? (
+                    <div className="bg-green-50 border border-green-200 rounded-xl p-3 mb-2 flex items-center gap-2">
+                      <span className="material-icons-outlined text-green-600 text-lg">local_offer</span>
+                      <span className="text-xs font-bold text-green-700">شحن مجاني! طلبك تجاوز {fmtPrice(freeShipping.min)} ر.ق</span>
+                    </div>
+                  ) : (
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-2 flex items-center gap-2">
+                      <span className="material-icons-outlined text-amber-600 text-sm">info</span>
+                      <span className="text-xs text-amber-700">أضف {fmtPrice(freeShipping.min - subtotal)} ر.ق للحصول على شحن مجاني!</span>
+                    </div>
+                  )
+                )}
+
                 <div className="space-y-2">
-                  {SHIPPING_METHODS.map(method => (
+                  {shippingMethods.map(method => (
                     <label key={method.id}
                       className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all
                         ${shippingMethod === method.id
@@ -392,12 +429,19 @@ export default function CheckoutPage({ params }: { params: { store: string } }) 
 
                       <div className="flex-1">
                         <p className="text-sm font-bold text-grey-900">{method.name}</p>
-                        <p className="text-xs text-grey-400 mt-0.5">{method.eta}</p>
+                        <p className="text-xs text-grey-400 mt-0.5">{method.eta || ''}</p>
                       </div>
 
                       <div className="text-left">
                         {method.cost > 0 ? (
-                          <span className="text-sm font-bold text-grey-800">{fmtPrice(method.cost)} <span className="text-[0.6rem] text-grey-400 font-normal">ر.ق</span></span>
+                          isFreeShipping ? (
+                            <div>
+                              <span className="text-sm font-bold text-green-600">مجاني</span>
+                              <span className="text-[0.6rem] text-grey-400 line-through block">{fmtPrice(method.cost)} ر.ق</span>
+                            </div>
+                          ) : (
+                            <span className="text-sm font-bold text-grey-800">{fmtPrice(method.cost)} <span className="text-[0.6rem] text-grey-400 font-normal">ر.ق</span></span>
+                          )
                         ) : (
                           <span className="text-sm font-bold text-green-600">مجاني</span>
                         )}
@@ -415,7 +459,7 @@ export default function CheckoutPage({ params }: { params: { store: string } }) 
                 </div>
 
                 <div className="space-y-2">
-                  {PAYMENT_METHODS.map(method => (
+                  {paymentMethods.map(method => (
                     <label key={method.id}
                       className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all
                         ${paymentMethod === method.id
@@ -434,7 +478,6 @@ export default function CheckoutPage({ params }: { params: { store: string } }) 
 
                       <div className="flex-1">
                         <p className="text-sm font-bold text-grey-900">{method.name}</p>
-                        <p className="text-xs text-grey-400 mt-0.5">{method.desc}</p>
                       </div>
 
                       <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0
@@ -445,10 +488,23 @@ export default function CheckoutPage({ params }: { params: { store: string } }) 
                   ))}
                 </div>
 
-                <p className="text-xs text-grey-400 mt-3 flex items-center gap-1">
-                  <span className="material-icons-outlined text-[11px]">info</span>
-                  بوابات الدفع الإلكتروني (سكايب كاش، سداد) قريباً
-                </p>
+                {/* Bank transfer details */}
+                {paymentMethod === 'bank_transfer' && paymentMethods.find(m => m.id === 'bank_transfer')?.details && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 mt-3">
+                    <p className="text-xs font-bold text-blue-800 mb-2">بيانات التحويل البنكي</p>
+                    {(() => {
+                      const d = paymentMethods.find(m => m.id === 'bank_transfer')?.details;
+                      return (
+                        <div className="space-y-1 text-xs text-blue-700">
+                          {d?.bank_name && <p>البنك: <strong>{d.bank_name}</strong></p>}
+                          {d?.account_name && <p>الاسم: <strong>{d.account_name}</strong></p>}
+                          {d?.iban && <p dir="ltr" className="text-left font-mono">IBAN: <strong>{d.iban}</strong></p>}
+                        </div>
+                      );
+                    })()}
+                    <p className="text-[0.6rem] text-blue-500 mt-2">أرسل إيصال التحويل عبر واتساب بعد إتمام الطلب</p>
+                  </div>
+                )}
               </div>
 
               {/* Coupon */}
@@ -568,11 +624,11 @@ export default function CheckoutPage({ params }: { params: { store: string } }) 
                 <div className="space-y-1.5 text-sm text-grey-600">
                   <p>
                     <span className="text-grey-400">التوصيل:</span>{' '}
-                    {SHIPPING_METHODS.find(m => m.id === shippingMethod)?.name} — {SHIPPING_METHODS.find(m => m.id === shippingMethod)?.eta}
+                    {shippingMethods.find(m => m.id === shippingMethod)?.name}
                   </p>
                   <p>
                     <span className="text-grey-400">الدفع:</span>{' '}
-                    {PAYMENT_METHODS.find(m => m.id === paymentMethod)?.name}
+                    {paymentMethods.find(m => m.id === paymentMethod)?.name}
                   </p>
                 </div>
               </div>
@@ -720,7 +776,7 @@ export default function CheckoutPage({ params }: { params: { store: string } }) 
             )}
           </div>
           <div className="text-left text-[0.6rem] text-grey-300">
-            {totalItems()} منتج • {SHIPPING_METHODS.find(m => m.id === shippingMethod)?.name}
+            {totalItems()} منتج • {shippingMethods.find(m => m.id === shippingMethod)?.name}
           </div>
         </div>
       </div>
