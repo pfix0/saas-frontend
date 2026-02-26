@@ -4,7 +4,7 @@
  * ساس — Product Detail Page
  */
 
-import { useEffect, useState, use } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useCartStore } from '@/stores/cart';
 
@@ -17,8 +17,8 @@ interface ProductDetail {
   images: { id: string; url: string; alt?: string; is_main: boolean }[];
 }
 
-export default function ProductPage({ params }: { params: Promise<{ store: string; slug: string }> }) {
-  const { store, slug } = use(params);
+export default function ProductPage({ params }: { params: { store: string; slug: string } }) {
+  const { store, slug } = params;
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);

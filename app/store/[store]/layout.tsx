@@ -5,7 +5,7 @@
  * Header ديناميكي + Cart Drawer + Footer
  */
 
-import { useEffect, useState, use } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useCartStore } from '@/stores/cart';
 
@@ -20,9 +20,9 @@ export default function StorefrontLayout({
   params,
 }: {
   children: React.ReactNode;
-  params: Promise<{ store: string }>;
+  params: { store: string };
 }) {
-  const { store } = use(params);
+  const { store } = params;
   const [storeData, setStoreData] = useState<StoreData | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);

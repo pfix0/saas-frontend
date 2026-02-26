@@ -5,7 +5,7 @@
  * Grid + Filters + Search + Pagination
  */
 
-import { useEffect, useState, use } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useCartStore } from '@/stores/cart';
@@ -16,8 +16,8 @@ interface Product {
 }
 interface Category { id: string; name: string; slug: string; }
 
-export default function ProductsPage({ params }: { params: Promise<{ store: string }> }) {
-  const { store } = use(params);
+export default function ProductsPage({ params }: { params: { store: string } }) {
+  const { store } = params;
   const searchParams = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);

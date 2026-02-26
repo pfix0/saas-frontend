@@ -5,7 +5,7 @@
  * Hero + Categories + Featured Products
  */
 
-import { useEffect, useState, use } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useCartStore } from '@/stores/cart';
 
@@ -15,8 +15,8 @@ interface Product {
 }
 interface Category { id: string; name: string; slug: string; image_url?: string; }
 
-export default function StorefrontHome({ params }: { params: Promise<{ store: string }> }) {
-  const { store } = use(params);
+export default function StorefrontHome({ params }: { params: { store: string } }) {
+  const { store } = params;
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [storeName, setStoreName] = useState('');

@@ -5,12 +5,12 @@
  * سلة المشتريات الكاملة + ملخص الطلب
  */
 
-import { use } from 'react';
+
 import Link from 'next/link';
 import { useCartStore } from '@/stores/cart';
 
-export default function CartPage({ params }: { params: Promise<{ store: string }> }) {
-  const { store } = use(params);
+export default function CartPage({ params }: { params: { store: string } }) {
+  const { store } = params;
   const { items, removeItem, updateQuantity, clearCart, totalItems, totalPrice } = useCartStore();
   const base = `/store/${store}`;
   const fmtPrice = (n: number) => n.toLocaleString('ar-QA', { minimumFractionDigits: 0 });
