@@ -19,6 +19,8 @@ const navItems = [
   { icon: 'payments', label: 'المالية', href: '/dashboard/payments' },
   { icon: 'local_shipping', label: 'الشحن', href: '/dashboard/shipping' },
   { icon: 'campaign', label: 'التسويق', href: '/dashboard/marketing' },
+  { icon: 'rate_review', label: 'التقييمات', href: '/dashboard/reviews' },
+  { icon: 'description', label: 'الصفحات', href: '/dashboard/pages' },
   { icon: 'bar_chart', label: 'التقارير', href: '/dashboard/reports' },
   { icon: 'settings', label: 'الإعدادات', href: '/dashboard/settings' },
 ];
